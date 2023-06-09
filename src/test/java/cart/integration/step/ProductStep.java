@@ -2,7 +2,7 @@ package cart.integration.step;
 
 import static io.restassured.RestAssured.given;
 
-import cart.dto.ProductRequest;
+import cart.dto.request.ProductRequest;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import org.springframework.http.HttpStatus;
@@ -25,5 +25,15 @@ public class ProductStep {
 
     private static long 응답에서_아이디를_가져온다(ExtractableResponse<Response> response) {
         return Long.parseLong(response.header("Location").split("/")[2]);
+    }
+
+    public static ExtractableResponse<Response> 상품을_상세_조회한다(Long id) {
+        return given().log().all()
+                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                .when()
+                .get("/products/" + id)
+                .then()
+                .log().all()
+                .extract();
     }
 }

@@ -3,14 +3,15 @@ package cart.application;
 import cart.domain.CartItem;
 import cart.domain.Member;
 import cart.domain.Product;
-import cart.dto.CartItemQuantityUpdateRequest;
-import cart.dto.CartItemRequest;
-import cart.dto.CartItemResponse;
+import cart.dto.request.CartItemQuantityUpdateRequest;
+import cart.dto.request.CartItemRequest;
+import cart.dto.response.CartItemResponse;
 import cart.repository.CartItemRepository;
 import cart.repository.ProductRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CartItemService {
@@ -22,6 +23,7 @@ public class CartItemService {
         this.productRepository = productRepository;
     }
 
+    @Transactional
     public Long save(Member member, CartItemRequest cartItemRequest) {
         Product product = productRepository.findById(cartItemRequest.getProductId());
         return cartItemRepository.save(new CartItem(member, product));
@@ -34,6 +36,7 @@ public class CartItemService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void updateQuantity(Member member, Long id, CartItemQuantityUpdateRequest request) {
         CartItem cartItem = cartItemRepository.findById(id);
         cartItem.checkOwner(member);
@@ -47,6 +50,7 @@ public class CartItemService {
         cartItemRepository.updateQuantity(cartItem);
     }
 
+    @Transactional
     public void deleteById(Member member, Long id) {
         CartItem cartItem = cartItemRepository.findById(id);
         cartItem.checkOwner(member);

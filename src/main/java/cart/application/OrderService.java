@@ -4,16 +4,18 @@ import cart.domain.CartItem;
 import cart.domain.Member;
 import cart.domain.Order;
 import cart.domain.OrderItem;
+import cart.domain.OrderItems;
 import cart.domain.Point;
-import cart.dto.OrderDetailResponse;
-import cart.dto.OrderItemResponse;
-import cart.dto.OrderRequest;
+import cart.dto.request.OrderRequest;
+import cart.dto.response.OrderDetailResponse;
+import cart.dto.response.OrderItemResponse;
 import cart.repository.CartItemRepository;
 import cart.repository.MemberRepository;
 import cart.repository.OrderRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class OrderService {
@@ -29,15 +31,16 @@ public class OrderService {
         this.memberRepository = memberRepository;
     }
 
+    @Transactional
     public Long save(Member member, OrderRequest orderRequest) {
         List<Long> cartItemIds = orderRequest.getCartItemIds();
         List<CartItem> cartItems = cartItemRepository.findByIds(member, cartItemIds);
-        List<OrderItem> orderItems = findOrderItems(cartItems);
+        OrderItems orderItems = convertToOrderItems(cartItems);
 
         Point usedPoint = new Point(orderRequest.getPoint());
         member.usePoint(usedPoint);
 
-        int totalPrice = calculateTotalPoint(orderItems);
+        int totalPrice = orderItems.calculateTotalPrice();
         Point savedPoint = Point.calcualtePoint(totalPrice);
         member.savePoint(savedPoint);
 
@@ -66,19 +69,14 @@ public class OrderService {
         return convertToResponse(order);
     }
 
-    private int calculateTotalPoint(List<OrderItem> orderItems) {
-        return orderItems.stream()
-                .mapToInt(OrderItem::calculatePrice)
-                .sum();
-    }
-
-    private List<OrderItem> findOrderItems(List<CartItem> cartItems) {
-        return cartItems.stream()
+    private OrderItems convertToOrderItems(List<CartItem> cartItems) {
+        List<OrderItem> orderItems = cartItems.stream()
                 .map(cartItem -> new OrderItem(
                         cartItem.getProduct(),
                         cartItem.getQuantity()
                 ))
                 .collect(Collectors.toList());
+        return new OrderItems(orderItems);
     }
 
     private OrderDetailResponse convertToResponse(Order order) {
@@ -87,7 +85,7 @@ public class OrderService {
                 order.getOrderedAt(),
                 order.getUsedPoint().getPoint(),
                 order.getSavedPoint().getPoint(),
-                OrderItemResponse.of(order.getOrderItems())
+                OrderItemResponse.of(order.getOrderItemsByList())
         );
     }
 }

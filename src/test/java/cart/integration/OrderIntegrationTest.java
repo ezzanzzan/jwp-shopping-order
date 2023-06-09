@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import cart.domain.CartItem;
 import cart.domain.Member;
-import cart.dto.OrderDetailResponse;
-import cart.dto.OrderRequest;
-import cart.dto.ProductRequest;
+import cart.dto.request.OrderRequest;
+import cart.dto.request.ProductRequest;
+import cart.dto.response.OrderDetailResponse;
 import cart.integration.step.CartItemStep;
 import cart.integration.step.OrderStep;
 import cart.integration.step.ProductStep;
@@ -150,5 +150,24 @@ public class OrderIntegrationTest extends IntegrationTest {
                 () -> assertThat(사용자별_주문_응답.statusCode()).isEqualTo(HttpStatus.OK.value()),
                 () -> assertThat(orderDetailResponses).hasSize(2)
         );
+    }
+
+    @DisplayName("적립된 포인트보다 많은 포인트를 사용하였을 때 예외 발생")
+    @Test
+    void orderUsedPointOverSavedPoint() {
+        // given
+        주문 = new OrderRequest(
+                List.of(),
+                "1234-1234-1234-1234",
+                123,
+                10000
+        );
+
+        // when
+        ExtractableResponse<Response> 잘못된_주문_응답 = OrderStep.주문을_추가한다(사용자, 주문);
+
+        // then
+        assertThat(잘못된_주문_응답.body().jsonPath().getString("message")).isEqualTo(
+                "사용할 수 있는 포인트의 범위를 입력해주세요. 저장된 포인트 = 1000, 사용한 포인트 = 10000");
     }
 }
